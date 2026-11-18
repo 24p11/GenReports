@@ -1,6 +1,6 @@
-"""Brest pipeline — weighted PMSI sampling (SNDS source).
+"""PMSI sampling pipeline — weighted PMSI sampling (SNDS source).
 
-This module implements the Brest-specific logic for generating synthetic
+This module implements the PMSI sampling-specific logic for generating synthetic
 medical reports from SNDS PMSI data. It inherits from the common
 :class:`~pipelines.pipeline.BasePipeline` and overrides the specific methods
 as needed.
@@ -13,20 +13,20 @@ from typing import override
 
 import polars as pl
 
-from pipelines.brest.report import generate_brest_report
+from pipelines.pmsi_sampling.report import generate_pmsi_sampling_report
 from pipelines.pipeline import BasePipeline
 from pipelines.report import generate_reports
 
 
-class BrestPipeline(BasePipeline):
-    """CHU Brest pipeline — weighted PMSI sampling (SNDS source).
+class PMSISamplingPipeline(BasePipeline):
+    """PMSI-sampling pipeline — weighted PMSI sampling (SNDS source).
 
     Source data is extracted via ``liabilities/extract_pmsi_tables_SNDS.sas``
     and placed as CSV files in the ``data.input`` directory configured in
     ``servers.yaml``.
     """
 
-    name = "brest"
+    name = "pmsi_sampling"
 
     # -- Data loading ------------------------------------------------------
 
@@ -67,7 +67,7 @@ class BrestPipeline(BasePipeline):
     @override
     def get_scenario(self, df: pl.DataFrame) -> pl.DataFrame:
         """Format fictitious stays as text scenarios for the LLM."""
-        # return format_scenarios(df, scenario_fn=format_brest_scenario)
+        # return format_scenarios(df, scenario_fn=format_pmsi_sampling_scenario)
         return NotImplemented
 
     @override
@@ -84,7 +84,7 @@ class BrestPipeline(BasePipeline):
             df=df,
             client=client,
             model=model,
-            generate_fn=generate_brest_report,
+            generate_fn=generate_pmsi_sampling_report,
             batch_size=batch_size,
             output_dir=output_dir,
             system_prompt=system_prompt,

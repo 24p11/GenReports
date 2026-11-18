@@ -2,7 +2,7 @@
 
 This module provides shared building blocks for transforming fictitious
 hospital stays into text scenarios ready for LLM prompting. It is used
-by both the Brest and AP-HP pipelines to ensure consistent formatting
+by both the PMSI sampling and profile-generation pipelines to ensure consistent formatting
 logic and reduce code duplication.
 
 Responsibilities:
@@ -40,7 +40,7 @@ def format_scenarios(
         Fucntion to generate scenario
     **kwargs:
         Additional pipeline-specific arguments (e.g., ``cancer_codes``,
-        ``atih_rules`` for AP-HP).
+        ``atih_rules`` for profile-generation).
 
     Returns
     -------

@@ -1,7 +1,7 @@
 """Base pipeline classes for synthetic medical-report generation.
 
 This module defines the common pipeline infrastructure shared by both the
-Brest and AP-HP pipelines. Concrete pipeline implementations should inherit
+PMSI sampling and profile-generation pipelines. Concrete pipeline implementations should inherit
 from :class:`BasePipeline` and override the specific methods as needed.
 """
 

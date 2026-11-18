@@ -223,7 +223,7 @@ class MistralClient(BaseClient):
     ) -> list[dict]:
         """Run a Mistral batch job.
 
-        This reproduces the historical AP-HP Mistral batch format:
+        This reproduces the historical profile-generation Mistral batch format:
         system prompt + user prompt + assistant prefix.
         """
         if not requests:
@@ -267,7 +267,7 @@ class MistralClient(BaseClient):
             "Mistral batch upload",
             lambda: self._client.files.upload(
                 file={
-                    "file_name": "stream_aphp_batch.jsonl",
+                    "file_name": "stream_profile_generation_batch.jsonl",
                     "content": buffer.getvalue(),
                 },
                 purpose="batch",
@@ -279,7 +279,7 @@ class MistralClient(BaseClient):
                 input_files=[input_file.id],
                 model=model,
                 endpoint="/v1/chat/completions",
-                metadata={"job_type": "stream_aphp"},
+                metadata={"job_type": "stream_profile_generation"},
             )
         except httpx.TransportError as exc:
             raise RuntimeError(

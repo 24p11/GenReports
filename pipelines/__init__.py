@@ -1,6 +1,6 @@
 """Stream pipelines — synthetic medical-report generation.
 
-This package provides two concrete pipelines (Brest and AP-HP) and a
+This package provides two concrete pipelines (PMSI sampling and profile-generation) and a
 set of shared modules for generating synthetic medical reports from
 PMSI data.
 
@@ -10,8 +10,8 @@ Core modules:
 - :mod:`pipelines.report`: Generate CRH reports via LLM calls.
 
 Concrete pipelines:
-- :mod:`pipelines.brest`: Brest pipeline (weighted PMSI sampling).
-- :mod:`pipelines.aphp`: AP-HP pipeline (scenario-based sampling).
+- :mod:`pipelines.pmsi_sampling`: PMSI sampling pipeline (weighted PMSI sampling).
+- :mod:`pipelines.profile_generation`: profile-generation pipeline (scenario-based sampling).
 
 Base classes:
 - :mod:`pipelines.pipeline`: Common pipeline infrastructure.

@@ -1,14 +1,14 @@
 # Configuration des pipelines (chemins de données)
 pipelines:
-  brest:
+  pmsi_sampling:
     data:
-      input: "data/brest/"    # Répertoire contenant les CSV/Parquet PMSI (source SNDS)
-      output: "reports/brest/" # Répertoire de sortie des CRH générés
-  aphp:
+      input: "data/pmsi_sampling/"    # Répertoire contenant les CSV/Parquet PMSI (source SNDS)
+      output: "reports/pmsi_sampling/" # Répertoire de sortie des CRH générés
+  profile_generation:
     data:
-      input: "data/aphp/"     # Répertoire contenant les CSV/Parquet PMSI (source ATIH)
-      referentials: "data/aphp/referentials"      # Référentiels AP-HP
-      output: "reports/aphp/" # Répertoire de sortie des CRH générés
+      input: "data/profile_generation/"     # Répertoire contenant les CSV/Parquet PMSI (source ATIH)
+      referentials: "data/profile_generation/referentials"      # Référentiels profile generation
+      output: "reports/profile_generation/" # Répertoire de sortie des CRH générés
     generation:
       mode: "direct"          # direct ou mistral_batch
       workflow: "one_stage"   # one_stage ou two_stage

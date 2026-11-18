@@ -6,13 +6,14 @@ from fictomed import generate
 
 from core.clients import get_client
 from core.config import load_config
-from pipelines.aphp.pipeline import APHPPipeline
-from pipelines.brest.pipeline import BrestPipeline
+from pipelines.pmsi_sampling.pipeline import PMSISamplingPipeline
+from pipelines.profile_generation.pipeline import ProfileGenerationPipeline
 
 PIPELINES = {
-    "brest": BrestPipeline,
-    "aphp": APHPPipeline,
+    "pmsi_sampling": PMSISamplingPipeline,
+    "profile_generation": ProfileGenerationPipeline,
 }
+
 
 CONFIG_DIR = Path(__file__).resolve().parent / "config"
 
@@ -30,7 +31,7 @@ def run(
     if pipeline_name not in PIPELINES:
         raise ValueError(
             f"Pipeline inconnu : '{pipeline_name}'. "
-            f"Valeurs acceptées : {list(PIPELINES.keys())}"
+            f"Valeurs acceptées : {list(PIPELINES)}"
         )
 
     config = load_config(CONFIG_DIR / "servers.yaml")

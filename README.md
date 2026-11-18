@@ -9,10 +9,10 @@ Stream unifie plusieurs méthodes de génération au sein d'une architecture com
 
 | Pipeline | Source de données | Méthode | Statut |
 |----------|-------------------|---------|--------|
-| **Brest** | ATIH (Base nationale) | Tirage pondéré DP/CCAM/DAS/DMS + LLM | Implémenté |
-| **AP-HP** | ATIH (Base nationale) | Tirage pondéré PMSI + LLM | Implémenté |
+| **PMSI sampling** | ATIH (Base nationale) | Tirage pondéré DP/CCAM/DAS/DMS + LLM | Implémenté |
+| **profile generation** | ATIH (Base nationale) | Tirage pondéré PMSI + LLM | Implémenté |
 
-Projets de référence : [Doppelgänger](https://github.com/CHU-Brest/doppelganger) (CHU Brest) et [Recode-Scenario](https://github.com/24p11/recode-scenario) (AP-HP).
+Projets de référence : [Doppelgänger](https://github.com/CHU-Brest/doppelganger) (CHU Brest) et [Recode-Scenario](https://github.com/24p11/recode-scenario) (profile generation).
 
 ## Architecture
 
@@ -27,19 +27,19 @@ Stream/
 ├── pipelines/
 │   ├── __init__.py               # Expose les pipelines et modules communs
 │   ├── pipeline.py               # Classes de base et clients LLM
-│   ├── fictive.py               # Génération de séjours fictifs (Brest/AP-HP)
+│   ├── fictive.py               # Génération de séjours fictifs (PMSI sampling/profile generation)
 │   ├── scenario.py              # Transformation en scénarios textuels
 │   ├── report.py                # Génération de rapports CRH via LLM
-│   ├── brest/
-│   │   ├── __init__.py           # Expose BrestPipeline, constants, sampler
-│   │   ├── pipeline.py           # Pipeline Brest spécifique
+│   ├── pmsi_sampling/
+│   │   ├── __init__.py           # Expose PMSISamplingPipeline, constants, sampler
+│   │   ├── pipeline.py           # Pipeline PMSI sampling spécifique
 │   │   ├── constants.py          # Constantes et sources de données
 │   │   ├── fictive.py            # Création de CR fictif
 │   │   ├── report.py             # Création de rapport
 │   │   └── sampler.py            # Échantillonnage et génération aléatoire
-│   └── aphp/
-│       ├── __init__.py           # Expose les modules AP-HP et APHPPipeline
-│       ├── pipeline.py           # Pipeline AP-HP spécifique
+│   └── profile_generation/
+│       ├── __init__.py           # Expose les modules profile generation et ProfileGenerationPipeline
+│       ├── pipeline.py           # Pipeline profile generation spécifique
 │       ├── loader.py             # Chargement des référentiels et données PMSI
 │       ├── scenario.py           # Construction des scénarios cliniques
 │       ├── managment.py          # Classification des types de prise en charge
@@ -48,7 +48,7 @@ Stream/
 │       ├── constants.py          # Constantes et listes de codes
 │       ├── fictive.py            # Création de CR fictif
 │       ├── report.py             # Création de rapport
-│       ├── referentials/         # Référentiels AP-HP (ICD-10, CCAM, GHM, etc.)
+│       ├── referentials/         # Référentiels profile generation (ICD-10, CCAM, GHM, etc.)
 │       └── templates/            # Modèles de prompts système
 └── config/
     ├── prompts.yaml              # System prompts LLM
@@ -84,15 +84,15 @@ cp config/servers.example.yaml config/servers.yaml
 
 ```yaml
 pipelines:
-  brest:
+  pmsi_sampling:
     data:
-      input: "data/brest/"       # CSV PMSI extraits via SAS
-      output: "reports/brest/"   # CRH générés
-  aphp:
+      input: "data/pmsi_sampling/"       # CSV PMSI extraits via SAS
+      output: "reports/pmsi_sampling/"   # CRH générés
+  profile_generation:
     data:
-      input: "data/aphp/"                    # Fichiers PMSI AP-HP
-      output: "reports/aphp/"                # CRH générés
-      referentials: "data/aphp/referentials" # Référentiels AP-HP
+      input: "data/profile_generation/"                    # Fichiers PMSI profile generation
+      output: "reports/profile_generation/"                # CRH générés
+      referentials: "data/profile_generation/referentials" # Référentiels profile generation
 
     generation:
       mode: "direct"           # direct ou mistral_batch
@@ -122,11 +122,11 @@ servers:
     api_key: "..."
     model: "mistral-large-latest"
 ```
-Pour reproduire la méthode historique AP-HP avec Mistral, le pipeline AP-HP peut être lancé en mode batch Mistral :
+Pour reproduire la méthode historique profile generation avec Mistral, le pipeline profile generation peut être lancé en mode batch Mistral :
 
 ```yaml
 pipelines:
-  aphp:
+  profile_generation:
     generation:
       mode: "mistral_batch"
       workflow: "one_stage"
@@ -139,12 +139,12 @@ pipelines:
 ```
 Ce mode est spécifique au client mistral. Le mode direct reste le mode par défaut et fonctionne avec Ollama, Claude et Mistral.
 
-Le workflow AP-HP en deux étapes génère d'abord un résumé clinique, puis
+Le workflow profile generation en deux étapes génère d'abord un résumé clinique, puis
 utilise ce résumé pour produire le compte rendu final :
 
 ```yaml
 pipelines:
-  aphp:
+  profile_generation:
     generation:
       mode: "mistral_batch"
       workflow: "two_stage"
@@ -160,7 +160,7 @@ pipelines:
           max_tokens: 128000
 ```
 
-Compatibilité des configurations AP-HP :
+Compatibilité des configurations profile generation :
 
 | Mode | Workflow | Client | Jeu de prompts |
 |------|----------|--------|----------------|
@@ -185,7 +185,7 @@ d’un job reprend également après une interruption réseau, sans recréer le 
 La création d’un job n’est pas répétée automatiquement : si sa réponse est
 perdue, les jobs actifs doivent être vérifiés côté Mistral avant une relance.
 
-### Données d'entrée (pipeline Brest)
+### Données d'entrée (pipeline PMSI sampling)
 
 Déposer les CSV suivants dans le répertoire `data.input` configuré :
 
@@ -201,7 +201,7 @@ Déposer les CSV suivants dans le répertoire `data.input` configuré :
 
 Ces fichiers sont produits par les scripts d'extraction ATIH spécifiques au CHU Brest.
 
-### Données d'entrée (pipeline AP-HP)
+### Données d'entrée (pipeline profile generation)
 
 Déposer les fichiers suivants dans le répertoire `data.input` configuré :
 
@@ -211,42 +211,42 @@ Déposer les fichiers suivants dans le répertoire `data.input` configuré :
 | `bn_pmsi_related_diag_*.csv` | Diagnostics associés par GHM |
 | `bn_pmsi_procedures_*.csv` | Actes CCAM par GHM |
 
-Ces fichiers sont produits par les scripts d'extraction ATIH spécifiques à l'AP-HP. Les référentiels AP-HP doivent être placés dans `data.referentials`.
+Ces fichiers sont produits par les scripts d'extraction ATIH spécifiques à l'profile generation. Les référentiels profile generation doivent être placés dans `data.referentials`.
 
 ## Utilisation
 
 ```bash
 # Générer 500 CRH avec Ollama (local)
-python cli.py brest --n-sejours 500
+python cli.py pmsi_sampling --n-sejours 500
 
 # Générer avec Claude, filtré sur les GHM chirurgicaux "06C"
-python cli.py brest --client claude --n-sejours 1000 --ghm5 06C
+python cli.py pmsi_sampling --client claude --n-sejours 1000 --ghm5 06C
 
 # Générer avec Mistral, 3 actes CCAM max, 4 DAS max
-python cli.py brest --client mistral --n-ccam 3 --n-das 4
+python cli.py pmsi_sampling --client mistral --n-ccam 3 --n-das 4
 ```
 
 
 ```bash
-# Générer 2 CRH AP-HP avec le mode direct par défaut
-python cli.py aphp --n-sejours 2
+# Générer 2 CRH profile generation avec le mode direct par défaut
+python cli.py profile_generation --n-sejours 2
 
-# Générer des CRH AP-HP avec Claude
-python cli.py aphp --client claude --n-sejours 10
+# Générer des CRH profile generation avec Claude
+python cli.py profile_generation --client claude --n-sejours 10
 
-# Générer des CRH AP-HP avec Mistral en mode direct
-python cli.py aphp --client mistral --n-sejours 10
+# Générer des CRH profile generation avec Mistral en mode direct
+python cli.py profile_generation --client mistral --n-sejours 10
 ```
 
 ### Options
 
 | Option | Défaut | Description |
 |--------|--------|-------------|
-| `pipeline` | — | `brest` ou `aphp` |
+| `pipeline` | — | `pmsi_sampling` ou `profile_generation` |
 | `--client` | `ollama` | `ollama`, `claude` ou `mistral` |
 | `--n-sejours` | 1000 | Nombre de séjours fictifs |
-| `--n-ccam` | 1 | Nombre max d'actes CCAM par séjour (Brest uniquement) |
-| `--n-das` | 5 | Nombre max de diagnostics associés (Brest uniquement) |
+| `--n-ccam` | 1 | Nombre max d'actes CCAM par séjour (PMSI sampling uniquement) |
+| `--n-das` | 5 | Nombre max de diagnostics associés (PMSI sampling uniquement) |
 | `--ghm5` | — | Filtre sur les codes GHM5 (ex. `06C`) |
 | `--batch-size` | 1000 | Lignes par écriture intermédiaire en mode direct |
 
@@ -258,21 +258,21 @@ Les sorties sont écrites en fichiers Parquet horodatés dans le répertoire `da
 Pour les générations classiques :
 
 ```text
-reports/brest/medical_reports_1000_20260405_143022.parquet
-reports/aphp/medical_reports_10_20260512_113644.parquet
+reports/pmsi_sampling/medical_reports_1000_20260405_143022.parquet
+reports/profile_generation/medical_reports_10_20260512_113644.parquet
 ```
 
-Pour le pipeline AP-HP, les scénarios complets sont également sauvegardés avant l’appel au LLM :
+Pour le pipeline profile generation, les scénarios complets sont également sauvegardés avant l’appel au LLM :
 
 ```text
-reports/aphp/aphp_scenarios_10_20260512_113402.parquet
+reports/profile_generation/profile_generation_scenarios_10_20260512_113402.parquet
 ```
 Ces fichiers contiennent notamment les diagnostics, DAS, actes, règle de codage, template, scenario, user_prompt, system_prompt, prefix et prefix_len.
 
-En mode Mistral batch AP-HP :
+En mode Mistral batch profile generation :
 ```text
-reports/aphp/aphp_mistral_batch_reports_10_20260512_115347.parquet
-reports/aphp/aphp_mistral_batch_two_stage_reports_10_20260512_120015.parquet
+reports/profile_generation/profile_generation_mistral_batch_reports_10_20260512_115347.parquet
+reports/profile_generation/profile_generation_mistral_batch_two_stage_reports_10_20260512_120015.parquet
 ```
 
 Les sorties `one_stage` contiennent notamment :
@@ -291,7 +291,7 @@ compteurs de tokens et son éventuelle erreur. Si le résumé échoue, la
 génération finale correspondante n’est pas envoyée et la ligne reste présente
 dans le Parquet avec un compte rendu vide.
 
-Les sorties AP-HP peuvent contenir des colonnes supplémentaires utiles au debug et à la comparaison avec la méthode historique AP-HP.
+Les sorties profile generation peuvent contenir des colonnes supplémentaires utiles au debug et à la comparaison avec la méthode historique profile generation.
 
 ## Tests
 
@@ -308,7 +308,7 @@ make test
 ```
 
 Les tests couvrent :
-- L'initialisation des pipelines Brest et AP-HP
+- L'initialisation des pipelines PMSI sampling et profile generation
 - La vérification des données d'entrée
 - L'intégration des pipelines avec le runner
 
@@ -336,7 +336,7 @@ Module responsable de la génération de séjours fictifs à partir des données
 - `generate_fictive_stays(data, n_sejours, generate_fn, **kwargs)`
 
 **Responsabilités** :
-- Génération de séjours fictifs pour les pipelines Brest et AP-HP
+- Génération de séjours fictifs pour les pipelines PMSI sampling et profile generation
 - Logique d'échantillonnage spécifique à chaque pipeline
 - Réduction de la duplication de code
 
@@ -349,7 +349,7 @@ Module responsable de la transformation des séjours fictifs en scénarios textu
 
 **Responsabilités** :
 - Transformation des séjours en prompts textuels
-- Formatage spécifique Brest (simple) et AP-HP (riche)
+- Formatage spécifique PMSI sampling (simple) et profile generation (riche)
 - Gestion des templates et règles ATIH
 
 ### `pipelines/report.py`
@@ -372,15 +372,15 @@ flowchart TD
         A["Base nationale ATIH"]
     end
 
-    subgraph Brest["Pipeline Brest"]
+    subgraph PMSI_SAMPLING["Pipeline PMSI sampling"]
         B1["Extraction CHU Brest"] --> B2["CSV: DP/DAS/DMS/CCAM"]
         B2 --> B3["Tirage pondéré simple"]
         B3 --> B4["Scénarios génériques"]
         B4 --> B5["Templates LLM basiques"]
     end
 
-    subgraph APHP["Pipeline AP-HP"]
-        A2["Extraction AP-HP"] --> A3["Parquet: Scénarios PMSI"]
+    subgraph PROFILE_GENERATION["Pipeline profile generation"]
+        A2["Extraction profile generation"] --> A3["Parquet: Scénarios PMSI"]
         A3 --> A4["Tirage + règles ATIH"]
         A4 --> A5["Scénarios enrichis"]
         A5 --> A6["Templates LLM spécifiques"]
@@ -391,37 +391,37 @@ flowchart TD
     A --> A2
 
     style Source fill:#f9f,stroke:#333
-    style Brest fill:#bbf,stroke:#333
-    style APHP fill:#bfb,stroke:#333
+    style PMSI_SAMPLING fill:#bbf,stroke:#333
+    style PROFILE_GENERATION fill:#bfb,stroke:#333
 ```
 
 ### Différences clés
 
-| Aspect | Pipeline Brest (CHU Brest) | Pipeline AP-HP (Paris) |
+| Aspect | Pipeline PMSI sampling (CHU Brest) | Pipeline profile generation (Paris) |
 |--------|----------------------------|-------------------------|
-| **Extraction** | Scripts CHU Brest | Scripts AP-HP spécifiques |
+| **Extraction** | Scripts CHU Brest | Scripts profile generation spécifiques |
 | **Format** | CSV (DP/DAS/DMS/CCAM) | Parquet (scénarios PMSI) |
 | **Tirage** | Pondéré simple | Pondéré + règles ATIH |
 | **Modules** | fictive.py, scenario.py | + report.py personnalisé |
 | **Classification** | Basique | MCO/SSR/HAD (managment.py) |
 | **Validation** | Standard | Règles ATIH spécifiques |
-| **Templates** | Génériques | Spécifiques AP-HP |
+| **Templates** | Génériques | Spécifiques profile generation |
 | **Complexité** | Simple | Sur-couche métier |
 
 ## Intégration dans les pipelines
 
-Les pipelines Brest et AP-HP ont été mis à jour pour utiliser ces modules communs :
+Les pipelines PMSI sampling et profile generation ont été mis à jour pour utiliser ces modules communs :
 
-### Brest Pipeline
+### PMSI sampling Pipeline
 ```python
-class BrestPipeline(BasePipeline):
+class PMSISamplingPipeline(BasePipeline):
     @override
     def get_fictive(self, data, **kwargs):
-        return generate_fictive_stays(data, generate_fn=generate_brest_fictive, **kwargs)
+        return generate_fictive_stays(data, generate_fn=generate_pmsi_sampling_fictive, **kwargs)
 
     @override
     def get_scenario(self, df):
-        return format_scenarios(df, scenario_fn=format_brest_scenario)
+        return format_scenarios(df, scenario_fn=format_pmsi_sampling_scenario)
 
      @override
     def get_report(
@@ -437,30 +437,30 @@ class BrestPipeline(BasePipeline):
             df=df,
             client=client,
             model=model,
-            generate_fn=generate_brest_report,
+            generate_fn=generate_pmsi_sampling_report,
             batch_size=batch_size,
             output_dir=output_dir,
             system_prompt=system_prompt,
         )
 ```
 
-### AP-HP Pipeline
-Le pipeline AP-HP utilise les modules communs avec une sur-couche spécifique pour la génération de rapports. Cette sur-couche implémente la logique métier AP-HP pour :
+### profile generation Pipeline
+Le pipeline profile generation utilise les modules communs avec une sur-couche spécifique pour la génération de rapports. Cette sur-couche implémente la logique métier profile generation pour :
 
-- **Gestion des référentiels ATIH** : Chargement et validation des codes ICD-10, CCAM et GHM spécifiques à l'AP-HP
+- **Gestion des référentiels ATIH** : Chargement et validation des codes ICD-10, CCAM et GHM spécifiques à l'profile generation
 - **Classification des prises en charge** : Application des règles de managment (MCO, SSR, HAD) selon les référentiels ATIH
-- **Génération de prompts enrichis** : Intégration des templates système spécifiques AP-HP avec règles de formatage ATIH
-- **Validation des scénarios** : Vérification de la cohérence clinique selon les règles métiers AP-HP
+- **Génération de prompts enrichis** : Intégration des templates système spécifiques profile generation avec règles de formatage ATIH
+- **Validation des scénarios** : Vérification de la cohérence clinique selon les règles métiers profile generation
 
 ```python
-class APHPPipeline(BasePipeline):
+class ProfileGenerationPipeline(BasePipeline):
     @override
     def get_fictive(self, data, **kwargs):
-        return generate_fictive_stays(data, generate_fn=generate_aphp_ficitive, **kwargs)
+        return generate_fictive_stays(data, generate_fn=generate_profile_fictive, **kwargs)
     
     @override
     def get_scenario(self, df):
-        return format_scenarios(df, scenario_fn=format_aphp_scenario, **kwargs)
+        return format_scenarios(df, scenario_fn=format_profile_scenario, **kwargs)
     
     @override
     def get_report(
@@ -482,8 +482,8 @@ class APHPPipeline(BasePipeline):
             model,
             batch_size=batch_size,
             output_dir=output_dir,
-            generate_fn=generate_aphp_report,
-            system_prompt="",  # just for signature since system from is in the df in the function generate_aphp_report
+            generate_fn=generate_profile_report,
+            system_prompt="",  # just for signature since system from is in the df in the function generate_profile_report
         )
 ```
 
@@ -559,12 +559,12 @@ gantt
 - Créer des adaptateurs pour les spécificités
 
 **2. Refactoring ciblé (Juin-Juillet 2024)**
-- Extraire la logique métier AP-HP
+- Extraire la logique métier profile generation
 - Documenter les divergences nécessaires
 - Optimiser les performances
 
 **3. Validation complète (Juillet-Août 2024)**
-- Tests d'intégration croisés Brest/AP-HP
+- Tests d'intégration croisés PMSI sampling/profile generation
 - Benchmarking comparatif
 - Validation des données et cohérence
 
@@ -574,7 +574,7 @@ gantt
 mindmap
   root((Décisions architecturales))
     Référentiels
-      Séparés (Brest/AP-HP)
+      Séparés (PMSI sampling/profile generation)
       Unifiés avec mappings
       Système de plugins
     Règles métiers
@@ -594,7 +594,7 @@ mindmap
 ### Processus décisionnel
 
 1. **Ateliers collaboratifs** (Mai 2024)
-   - Alignement Brest/AP-HP sur les besoins
+   - Alignement PMSI sampling/profile generation sur les besoins
    - Priorisation des décisions
 
 2. **Prototypage** (Juin 2024)

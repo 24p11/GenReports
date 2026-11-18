@@ -1,11 +1,11 @@
 """Fictive stay generation — common primitives for sampling hospital stays.
 
 This module provides shared building blocks for generating fictitious
-hospital stays from PMSI data. It is used by both the Brest and AP-HP
+hospital stays from PMSI data. It is used by both the PMSI sampling and profile-generation
 pipelines to ensure consistent sampling logic and reduce code duplication.
 
 Responsibilities:
-- Generate fictitious hospital stays from PMSI data (Brest/AP-HP).
+- Generate fictitious hospital stays from PMSI data (PMSI sampling/profile-generation).
 - Ensure consistent sampling logic across pipelines.
 - Reduce code duplication between pipelines.
 
@@ -42,7 +42,7 @@ def generate_fictive_stays(
         Function to generate dictive stay
     **kwargs:
         Additional pipeline-specific arguments (e.g., ``n_ccam``, ``n_das``
-        for Brest; ``seed`` for AP-HP).
+        for PMSI sampling; ``seed`` for profile-generation).
 
     Returns
     -------

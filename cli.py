@@ -14,7 +14,7 @@ def main() -> None:
     )
     parser.add_argument(
         "pipeline",
-        choices=["brest", "aphp"],
+        choices=["pmsi_sampling", "profile_generation"],
         help="Pipeline source de données à utiliser.",
     )
     parser.add_argument(

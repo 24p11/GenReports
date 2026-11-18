@@ -47,11 +47,11 @@ pip install -r requirements.txt
 ### Running the Project
 
 ```bash
-# Generate synthetic medical reports using the Brest pipeline
-python cli.py brest --n-sejours 100
+# Generate synthetic medical reports using the PMSI sampling pipeline
+python cli.py pmsi_sampling --n-sejours 100
 
-# Generate using the AP-HP pipeline
-python cli.py aphp --n-sejours 100
+# Generate using the profile-generation pipeline
+python cli.py profile_generation --n-sejours 100
 ```
 
 ## 📝 Coding Guidelines

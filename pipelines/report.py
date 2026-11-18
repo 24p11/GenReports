@@ -2,7 +2,7 @@
 
 This module provides shared building blocks for generating synthetic
 medical reports (CRH) from text scenarios using LLM calls. It is used
-by both the Brest and AP-HP pipelines to ensure consistent LLM interaction
+by both the PMSI sampling and profile-generation pipelines to ensure consistent LLM interaction
 logic and reduce code duplication.
 
 Responsibilities:

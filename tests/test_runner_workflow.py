@@ -17,7 +17,7 @@ def test_runner_forwards_prompt_configuration_to_fictomed(monkeypatch):
     calls = []
     config = {
         "pipelines": {
-            "aphp": {
+            "profile_generation": {
                 "generation": {
                     "workflow": "two_stage",
                     "prompt_set": "old",
@@ -28,7 +28,7 @@ def test_runner_forwards_prompt_configuration_to_fictomed(monkeypatch):
         "servers": {},
     }
 
-    monkeypatch.setitem(runner.PIPELINES, "aphp", DummyPipeline)
+    monkeypatch.setitem(runner.PIPELINES, "profile_generation", DummyPipeline)
     monkeypatch.setattr(
         runner,
         "load_config",
@@ -42,8 +42,9 @@ def test_runner_forwards_prompt_configuration_to_fictomed(monkeypatch):
     )
     monkeypatch.setattr(runner, "get_client", lambda *_: (object(), "model"))
 
-    runner.run("aphp", n_sejours=2)
+    runner.run("profile_generation", n_sejours=2)
 
+    assert calls[0]["pipeline_name"] == "profile_generation"
     assert calls[0]["prompt_workflow"] == "two_stage"
     assert calls[0]["prompt_set"] == "old"
     assert calls[0]["prompt_dir"] == "/tmp/custom-prompts"

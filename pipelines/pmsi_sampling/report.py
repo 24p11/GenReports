@@ -1,11 +1,11 @@
 from typing import Any
 
 
-def generate_brest_report(
+def generate_pmsi_sampling_report(
     row: dict, client: Any, model: str, system_prompt: str
 ) -> dict:
     """
-    Génération spécifique pour Brest.
+    Génération spécifique pour PMSI sampling.
 
     Parameters
     ----------
@@ -16,7 +16,7 @@ def generate_brest_report(
     model : str
         Nom du modèle à utiliser.
     system_prompt : str
-        Prompt système spécifique au pipeline Brest.
+        Prompt système spécifique au pipeline PMSI sampling.
 
     Returns
     -------

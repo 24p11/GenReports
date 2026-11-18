@@ -10,13 +10,13 @@ import polars as pl
 from fictomed.sites.aphp.prompt import make_final_user_prompt
 
 
-def generate_aphp_report(
+def generate_profile_report(
     row: dict,
     client: Any,
     model: str,
     system_prompt: str = "",
 ) -> dict:
-    """Generate one AP-HP report with the generic Stream client interface."""
+    """Generate one profile-generation report with the generic Stream client interface."""
     row_system_prompt = row.get("system_prompt") or system_prompt
     user_prompt = row.get("user_prompt") or row["scenario"]
 
@@ -53,7 +53,7 @@ def _run_mistral_batch_chunks(
     return responses
 
 
-def generate_aphp_reports_mistral_batch(
+def generate_profile_reports_mistral_batch(
     df: pl.DataFrame,
     client: Any,
     model: str,
@@ -63,7 +63,7 @@ def generate_aphp_reports_mistral_batch(
     poll_interval_seconds: int = 1,
     batch_size: int = 1_000,
 ) -> pl.DataFrame:
-    """Generate AP-HP reports using Historical AP-HP Mistral batch method.
+    """Generate profile reports using Historical Mistral batch method.
 
     This expects the DataFrame produced by fictomed to contain:
     system_prompt, user_prompt, prefix.
@@ -72,7 +72,7 @@ def generate_aphp_reports_mistral_batch(
     missing = required - set(df.columns)
     if missing:
         raise ValueError(
-            "Le DataFrame AP-HP ne contient pas les colonnes attendues : "
+            "Le DataFrame de génération de profils ne contient pas les colonnes attendues : "
             + ", ".join(sorted(missing))
         )
 
@@ -128,7 +128,7 @@ def generate_aphp_reports_mistral_batch(
     out_df = pl.DataFrame(output_rows)
 
     output_path = output_dir / (
-        f"aphp_mistral_batch_reports_{out_df.height}_"
+        f"profile_generation_mistral_batch_reports_{out_df.height}_"
         f"{datetime.now().strftime('%Y%m%d_%H%M%S')}.parquet"
     )
     out_df.write_parquet(output_path)
@@ -140,7 +140,7 @@ def _json_or_empty(value: Any) -> str:
     return json.dumps(value, ensure_ascii=False) if value else ""
 
 
-def generate_aphp_reports_mistral_batch_two_stage(
+def generate_profile_reports_mistral_batch_two_stage(
     df: pl.DataFrame,
     client: Any,
     *,
@@ -152,7 +152,7 @@ def generate_aphp_reports_mistral_batch_two_stage(
     poll_interval_seconds: int = 1,
     batch_size: int = 1_000,
 ) -> pl.DataFrame:
-    """Generate an intermediate summary, then the final AP-HP report."""
+    """Generate an intermediate summary, then the final profile-generation report."""
     output_dir.mkdir(parents=True, exist_ok=True)
     required = {
         "generation_id",
@@ -166,7 +166,7 @@ def generate_aphp_reports_mistral_batch_two_stage(
     missing = required - set(df.columns)
     if missing:
         raise ValueError(
-            "Le DataFrame AP-HP two_stage ne contient pas les colonnes attendues : "
+            "Le DataFrame de génération de profils two_stage ne contient pas les colonnes attendues : "
             + ", ".join(sorted(missing))
         )
 
@@ -261,7 +261,7 @@ def generate_aphp_reports_mistral_batch_two_stage(
 
     out_df = pl.DataFrame(output_rows)
     output_path = output_dir / (
-        f"aphp_mistral_batch_two_stage_reports_{out_df.height}_"
+        f"profile_generation_mistral_batch_two_stage_reports_{out_df.height}_"
         f"{datetime.now().strftime('%Y%m%d_%H%M%S')}.parquet"
     )
     out_df.write_parquet(output_path)

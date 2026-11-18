@@ -1,10 +1,10 @@
 import polars as pl
 import pytest
 
-from pipelines.aphp.pipeline import APHPPipeline
-from pipelines.aphp.report import (
-    generate_aphp_reports_mistral_batch,
-    generate_aphp_reports_mistral_batch_two_stage,
+from pipelines.profile_generation.pipeline import ProfileGenerationPipeline
+from pipelines.profile_generation.report import (
+    generate_profile_reports_mistral_batch,
+    generate_profile_reports_mistral_batch_two_stage,
 )
 
 
@@ -76,7 +76,7 @@ def one_stage_df():
 def test_two_stage_runs_two_batches_and_joins_by_custom_id(tmp_path):
     client = FakeBatchClient()
 
-    result = generate_aphp_reports_mistral_batch_two_stage(
+    result = generate_profile_reports_mistral_batch_two_stage(
         two_stage_df(),
         client,
         summary_model="summary-model",
@@ -95,13 +95,13 @@ def test_two_stage_runs_two_batches_and_joins_by_custom_id(tmp_path):
     assert result["summary"].to_list() == ["SUMMARY-0", "SUMMARY-1"]
     assert result["report"].to_list() == ["REPORT-0", "REPORT-1"]
     assert result["summary_total_tokens"].to_list() == [30, 30]
-    assert list(tmp_path.glob("aphp_mistral_batch_two_stage_reports_2_*.parquet"))
+    assert list(tmp_path.glob("profile_generation_mistral_batch_two_stage_reports_2_*.parquet"))
 
 
 def test_one_stage_splits_requests_and_keeps_one_output(tmp_path):
     client = FakeBatchClient()
 
-    result = generate_aphp_reports_mistral_batch(
+    result = generate_profile_reports_mistral_batch(
         one_stage_df(),
         client,
         "report-model",
@@ -114,13 +114,13 @@ def test_one_stage_splits_requests_and_keeps_one_output(tmp_path):
         for call in client.calls
     ] == [["0", "1"], ["2"]]
     assert result["report"].to_list() == ["REPORT-0", "REPORT-1", "REPORT-2"]
-    assert len(list(tmp_path.glob("aphp_mistral_batch_reports_3_*.parquet"))) == 1
+    assert len(list(tmp_path.glob("profile_generation_mistral_batch_reports_3_*.parquet"))) == 1
 
 
 def test_two_stage_splits_summary_and_report_requests(tmp_path):
     client = FakeBatchClient()
 
-    result = generate_aphp_reports_mistral_batch_two_stage(
+    result = generate_profile_reports_mistral_batch_two_stage(
         two_stage_df(),
         client,
         summary_model="summary-model",
@@ -143,7 +143,7 @@ def test_two_stage_splits_summary_and_report_requests(tmp_path):
 
 def test_mistral_batch_size_must_be_positive(tmp_path):
     with pytest.raises(ValueError, match="mistral_batch_size"):
-        generate_aphp_reports_mistral_batch(
+        generate_profile_reports_mistral_batch(
             one_stage_df(),
             FakeBatchClient(),
             "report-model",
@@ -155,7 +155,7 @@ def test_mistral_batch_size_must_be_positive(tmp_path):
 def test_two_stage_skips_failed_summaries_in_report_batch(tmp_path):
     client = FakeBatchClient(fail_summary_id="1")
 
-    result = generate_aphp_reports_mistral_batch_two_stage(
+    result = generate_profile_reports_mistral_batch_two_stage(
         two_stage_df(),
         client,
         summary_model="summary-model",
@@ -170,7 +170,7 @@ def test_two_stage_skips_failed_summaries_in_report_batch(tmp_path):
 
 def test_two_stage_requires_its_fictomed_columns(tmp_path):
     with pytest.raises(ValueError, match="final_prefix"):
-        generate_aphp_reports_mistral_batch_two_stage(
+        generate_profile_reports_mistral_batch_two_stage(
             two_stage_df().drop("final_prefix"),
             FakeBatchClient(),
             summary_model="summary-model",
@@ -180,7 +180,7 @@ def test_two_stage_requires_its_fictomed_columns(tmp_path):
 
 
 def test_pipeline_rejects_two_stage_direct_mode(tmp_path):
-    pipeline = APHPPipeline(
+    pipeline = ProfileGenerationPipeline(
         config={
             "data": {"output": str(tmp_path)},
             "generation": {"mode": "direct", "workflow": "two_stage"},
