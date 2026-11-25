@@ -1,0 +1,43 @@
+# Configuration des pipelines (chemins de données)
+pipelines:
+  pmsi_sampling:
+    data:
+      input: "data/pmsi_sampling/"    # Répertoire contenant les CSV/Parquet PMSI (source SNDS)
+      output: "reports/pmsi_sampling/" # Répertoire de sortie des CRH générés
+  profile_generation:
+    data:
+      input: "data/profile_generation/"     # Répertoire contenant les CSV/Parquet PMSI (source ATIH)
+      referentials: "data/profile_generation/referentials"      # Référentiels profile generation
+      output: "reports/profile_generation/" # Répertoire de sortie des CRH générés
+    generation:
+      mode: "direct"          # direct ou mistral_batch
+      workflow: "one_stage"   # one_stage ou two_stage
+      prompt_set: "default"   # default ou old
+      poll_interval_seconds: 1
+      mistral_batch_size: 1000
+      one_stage:
+        model: "mistral-large-latest"
+        max_tokens: 128000
+      two_stage:
+        summary:
+          model: "mistral-large-latest"
+          max_tokens: 8000
+        report:
+          model: "mistral-large-latest"
+          max_tokens: 128000
+
+# Configuration des serveurs LLM
+servers:
+  ollama:
+    host: "http://localhost:11434"
+    model: "mistral"
+
+  claude:
+    api_key: ""               # Renseigner ANTHROPIC_API_KEY
+    model: "claude-sonnet-4-6"
+    verify: true              # true | false | chemin vers bundle CA (.pem)
+
+  mistral:
+    api_key: ""               # Renseigner MISTRAL_API_KEY
+    model: "mistral-large-latest"
+    verify: true
