@@ -26,7 +26,7 @@ from pipelines.report import generate_reports
 class ProfileGenerationPipeline(BasePipeline):
     """Profile-generation pipeline — report generation only.
 
-    The input DataFrame is expected to come from fictomed and to contain:
+    The input DataFrame is expected to come from GenPatientProfile and to contain:
     generation_id, scenario, user_prompt, system_prompt, prefix, prefix_len.
     """
 
@@ -35,7 +35,7 @@ class ProfileGenerationPipeline(BasePipeline):
     @override
     def check_data(self) -> None:
         """Check only the Stream report output directory.
-        Input data and referentials are checked by fictomed.
+        Input data and referentials are checked by GenPatientProfile.
         """
         output_dir = Path(self.config["data"]["output"])
         output_dir.mkdir(parents=True, exist_ok=True)
@@ -43,7 +43,7 @@ class ProfileGenerationPipeline(BasePipeline):
     @override
     def load_data(self) -> dict[str, pl.LazyFrame]:
         """No profile data loading is performed in Stream.
-        Scenario generation is handled by fictomed.
+        Scenario generation is handled by GenPatientProfile.
         """
         return {}
 
@@ -54,16 +54,16 @@ class ProfileGenerationPipeline(BasePipeline):
         **kwargs: Any,
     ) -> pl.DataFrame:
         """Not used by this pipeline in Stream.
-        fictomed.generate("profile_generation", ...) is called by runner.py.
+        genpatientprofile.generate("profile_generation", ...) is called by runner.py.
         """
         raise NotImplementedError(
-            "Profile generation is handled by fictomed, not Stream."
+            "Profile generation is handled by GenPatientProfile, not Stream."
         )
 
     @override
     def get_scenario(self, df: pl.DataFrame) -> pl.DataFrame:
         """Not used by this pipeline in Stream.
-        The DataFrame returned by fictomed already contains scenario prompts.
+        The DataFrame returned by GenPatientProfile already contains scenario prompts.
         """
         return df
 

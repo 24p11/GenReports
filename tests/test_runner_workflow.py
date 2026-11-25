@@ -13,7 +13,7 @@ class DummyPipeline:
         return df
 
 
-def test_runner_forwards_prompt_configuration_to_fictomed(monkeypatch):
+def test_runner_forwards_prompt_configuration_to_genpatientprofile(monkeypatch):
     calls = []
     config = {
         "pipelines": {

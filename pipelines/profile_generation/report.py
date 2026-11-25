@@ -7,7 +7,7 @@ from typing import Any
 
 import polars as pl
 
-from fictomed.sites.aphp.prompt import make_final_user_prompt
+from genpatientprofile.sites.aphp.prompt import make_final_user_prompt
 
 
 def generate_profile_report(
@@ -65,7 +65,7 @@ def generate_profile_reports_mistral_batch(
 ) -> pl.DataFrame:
     """Generate profile reports using Historical Mistral batch method.
 
-    This expects the DataFrame produced by fictomed to contain:
+    This expects the DataFrame produced by GenPatientProfile to contain:
     system_prompt, user_prompt, prefix.
     """
     required = {"generation_id", "scenario", "system_prompt", "user_prompt", "prefix"}

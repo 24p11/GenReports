@@ -168,7 +168,7 @@ def test_two_stage_skips_failed_summaries_in_report_batch(tmp_path):
     assert "summary failed" in result["summary_mistral_batch_error"][1]
 
 
-def test_two_stage_requires_its_fictomed_columns(tmp_path):
+def test_two_stage_requires_its_genpatientprofile_columns(tmp_path):
     with pytest.raises(ValueError, match="final_prefix"):
         generate_profile_reports_mistral_batch_two_stage(
             two_stage_df().drop("final_prefix"),

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from fictomed import generate
+from genpatientprofile import generate
 
 from core.clients import get_client
 from core.config import load_config

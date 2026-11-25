@@ -170,7 +170,7 @@ Compatibilité des configurations profile generation :
 
 Le jeu de prompts `default` prend uniquement en charge `one_stage`. Le jeu
 `old` prend en charge les deux workflows. Un jeu externe peut être sélectionné
-avec `prompt_dir` à la place de `prompt_set`. fictomed valide son manifeste et
+avec `prompt_dir` à la place de `prompt_set`. GenPatientProfile valide son manifeste et
 en sauvegarde un instantané dans le répertoire de sortie.
 
 En mode `mistral_batch`, les requêtes sont réparties dans des jobs successifs
