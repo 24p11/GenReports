@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 
 
-def get_logger(name: str = "stream") -> logging.Logger:
+def get_logger(name: str = "genreports") -> logging.Logger:
     """Return a configured console logger."""
     logger = logging.getLogger(name)
     if not logger.handlers:

@@ -1,4 +1,4 @@
-"""Stream pipelines — synthetic medical-report generation.
+"""GenReports pipelines — synthetic medical-report generation.
 
 This package provides two concrete pipelines (PMSI sampling and profile-generation) and a
 set of shared modules for generating synthetic medical reports from

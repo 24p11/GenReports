@@ -1,6 +1,6 @@
-# 🛠️ Simplification des dépendances et des appels de fonctions - Stream
+# 🛠️ Simplification des dépendances et des appels de fonctions - GenReports
 
-**Ce guide propose des recommandations pratiques pour simplifier le code du projet Stream**, adaptées à la phase actuelle de développement où la simplicité et la maintenabilité sont prioritaires.
+**Ce guide propose des recommandations pratiques pour simplifier le code du projet GenReports**, adaptées à la phase actuelle de développement où la simplicité et la maintenabilité sont prioritaires.
 
 ---
 
@@ -1016,4 +1016,4 @@ def get_pipeline(pipeline_name: str, config: dict) -> BasePipeline:
 
 ## Conclusion
 
-Ces recommandations visent à simplifier le code et les dépendances du repo Stream pour faciliter la maintenance et le développement. Elles sont adaptées à la phase actuelle du projet où la simplicité est prioritaire. En appliquant ces suggestions, le code sera plus facile à comprendre, à maintenir et à étendre.
+Ces recommandations visent à simplifier le code et les dépendances du repo GenReports pour faciliter la maintenance et le développement. Elles sont adaptées à la phase actuelle du projet où la simplicité est prioritaire. En appliquant ces suggestions, le code sera plus facile à comprendre, à maintenir et à étendre.

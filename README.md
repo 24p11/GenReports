@@ -1,11 +1,11 @@
-# Stream
+# GenReports
 
 ![Python](https://img.shields.io/badge/python-3.13+-blue)
 [![CC BY-NC-SA 4.0](https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-green.svg)](https://creativecommons.org/licenses/by-nc-sa/4.0/)
 
 Génération de comptes rendus d'hospitalisation (CRH) synthétiques à partir de statistiques PMSI nationales et de modèles de langage (LLM).
 
-Stream unifie plusieurs méthodes de génération au sein d'une architecture commune, chacune étant implémentée sous forme de pipeline :
+GenReports unifie plusieurs méthodes de génération au sein d'une architecture commune, chacune étant implémentée sous forme de pipeline :
 
 | Pipeline | Source de données | Méthode | Statut |
 |----------|-------------------|---------|--------|
@@ -17,7 +17,7 @@ Projets de référence : [Doppelgänger](https://github.com/CHU-Brest/doppelgang
 ## Architecture
 
 ```
-Stream/
+GenReports/
 ├── cli.py                        # Point d'entrée CLI
 ├── runner.py                     # Orchestration du pipeline
 ├── core/
@@ -61,13 +61,11 @@ Avec pip :
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
-pip install -r requirements.txt
+pip install -e .
 ```
 
 Avec uv:
 ```bash
-uv venv
-source .venv/bin/activate
 uv sync
 ```
 
@@ -217,25 +215,25 @@ Ces fichiers sont produits par les scripts d'extraction ATIH spécifiques à l'p
 
 ```bash
 # Générer 500 CRH avec Ollama (local)
-python cli.py pmsi_sampling --n-sejours 500
+uv run genreports pmsi_sampling --n-sejours 500
 
 # Générer avec Claude, filtré sur les GHM chirurgicaux "06C"
-python cli.py pmsi_sampling --client claude --n-sejours 1000 --ghm5 06C
+uv run genreports pmsi_sampling --client claude --n-sejours 1000 --ghm5 06C
 
 # Générer avec Mistral, 3 actes CCAM max, 4 DAS max
-python cli.py pmsi_sampling --client mistral --n-ccam 3 --n-das 4
+uv run genreports pmsi_sampling --client mistral --n-ccam 3 --n-das 4
 ```
 
 
 ```bash
 # Générer 2 CRH profile generation avec le mode direct par défaut
-python cli.py profile_generation --n-sejours 2
+uv run genreports profile_generation --n-sejours 2
 
 # Générer des CRH profile generation avec Claude
-python cli.py profile_generation --client claude --n-sejours 10
+uv run genreports profile_generation --client claude --n-sejours 10
 
 # Générer des CRH profile generation avec Mistral en mode direct
-python cli.py profile_generation --client mistral --n-sejours 10
+uv run genreports profile_generation --client mistral --n-sejours 10
 ```
 
 ### Options

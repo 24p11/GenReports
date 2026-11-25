@@ -267,7 +267,7 @@ class MistralClient(BaseClient):
             "Mistral batch upload",
             lambda: self._client.files.upload(
                 file={
-                    "file_name": "stream_profile_generation_batch.jsonl",
+                    "file_name": "genreports_profile_generation_batch.jsonl",
                     "content": buffer.getvalue(),
                 },
                 purpose="batch",
@@ -279,7 +279,7 @@ class MistralClient(BaseClient):
                 input_files=[input_file.id],
                 model=model,
                 endpoint="/v1/chat/completions",
-                metadata={"job_type": "stream_profile_generation"},
+                metadata={"job_type": "genreports_profile_generation"},
             )
         except httpx.TransportError as exc:
             raise RuntimeError(

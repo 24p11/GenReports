@@ -9,7 +9,7 @@ from runner import run
 def main() -> None:
     """CLI entry point for synthetic medical-report generation."""
     parser = argparse.ArgumentParser(
-        prog="stream",
+        prog="genreports",
         description="Génération de comptes rendus d'hospitalisation synthétiques.",
     )
     parser.add_argument(

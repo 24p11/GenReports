@@ -34,7 +34,7 @@ class ProfileGenerationPipeline(BasePipeline):
 
     @override
     def check_data(self) -> None:
-        """Check only the Stream report output directory.
+        """Check only the GenReports report output directory.
         Input data and referentials are checked by GenPatientProfile.
         """
         output_dir = Path(self.config["data"]["output"])
@@ -42,7 +42,7 @@ class ProfileGenerationPipeline(BasePipeline):
 
     @override
     def load_data(self) -> dict[str, pl.LazyFrame]:
-        """No profile data loading is performed in Stream.
+        """No profile data loading is performed in GenReports.
         Scenario generation is handled by GenPatientProfile.
         """
         return {}
@@ -53,16 +53,16 @@ class ProfileGenerationPipeline(BasePipeline):
         data: dict[str, pl.LazyFrame],
         **kwargs: Any,
     ) -> pl.DataFrame:
-        """Not used by this pipeline in Stream.
+        """Not used by this pipeline in GenReports.
         genpatientprofile.generate("profile_generation", ...) is called by runner.py.
         """
         raise NotImplementedError(
-            "Profile generation is handled by GenPatientProfile, not Stream."
+            "Profile generation is handled by GenPatientProfile, not GenReports."
         )
 
     @override
     def get_scenario(self, df: pl.DataFrame) -> pl.DataFrame:
-        """Not used by this pipeline in Stream.
+        """Not used by this pipeline in GenReports.
         The DataFrame returned by GenPatientProfile already contains scenario prompts.
         """
         return df

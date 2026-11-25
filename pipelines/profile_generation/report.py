@@ -16,7 +16,7 @@ def generate_profile_report(
     model: str,
     system_prompt: str = "",
 ) -> dict:
-    """Generate one profile-generation report with the generic Stream client interface."""
+    """Generate one profile-generation report with the generic GenReports client interface."""
     row_system_prompt = row.get("system_prompt") or system_prompt
     user_prompt = row.get("user_prompt") or row["scenario"]
 

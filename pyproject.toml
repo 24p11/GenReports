@@ -1,5 +1,16 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+py-modules = ["cli", "runner"]
+
+[tool.setuptools.packages.find]
+include = ["core*", "pipelines*"]
+exclude = ["tests*", "data*", "reports*"]
+
 [project]
-name = "stream"
+name = "GenReports"
 version = "0.1.0"
 description = "Synthetic medical-report generation from PMSI statistics and LLMs."
 readme = "README.md"
@@ -18,5 +29,5 @@ dependencies = [
 ]
 
 [project.scripts]
-stream = "cli:main"
+genreports = "cli:main"
 

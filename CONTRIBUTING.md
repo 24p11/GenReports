@@ -1,6 +1,6 @@
-# Contributing to Stream
+# Contributing to GenReports
 
-Thank you for your interest in contributing to Stream! This guide will help you get started with development, testing, and submitting changes.
+Thank you for your interest in contributing to GenReports! This guide will help you get started with development, testing, and submitting changes.
 
 ## 🚀 Getting Started
 
@@ -12,46 +12,40 @@ Thank you for your interest in contributing to Stream! This guide will help you 
 
 ### Development Environment Setup
 
-#### Option 1: Using Poetry (Recommended)
+#### Option 1: Using uv (Recommended)
 
 ```bash
-# Install Poetry (if not already installed)
-curl -sSL https://install.python-poetry.org | python3 -
-
 # Clone the repository
-git clone https://github.com/CHU-Brest/Stream.git
-cd Stream
+git clone https://github.com/24p11/GenReports.git
+cd GenReports
 
-# Install dependencies
-poetry install
-
-# Activate the virtual environment
-poetry shell
+# Install the project and its dependencies
+uv sync
 ```
 
 #### Option 2: Using pip
 
 ```bash
 # Clone the repository
-git clone https://github.com/CHU-Brest/Stream.git
-cd Stream
+git clone https://github.com/24p11/GenReports.git
+cd GenReports
 
 # Create a virtual environment
 python3 -m venv .venv
 source .venv/bin/activate
 
 # Install dependencies
-pip install -r requirements.txt
+pip install -e .
 ```
 
 ### Running the Project
 
 ```bash
 # Generate synthetic medical reports using the PMSI sampling pipeline
-python cli.py pmsi_sampling --n-sejours 100
+uv run genreports pmsi_sampling --n-sejours 100
 
 # Generate using the profile-generation pipeline
-python cli.py profile_generation --n-sejours 100
+uv run genreports profile_generation --n-sejours 100
 ```
 
 ## 📝 Coding Guidelines
@@ -195,7 +189,7 @@ By participating in this project, you agree to abide by the [Contributor Covenan
 
 ## 📫 Contact
 
-For questions or discussions, please open an [issue](https://github.com/CHU-Brest/Stream/issues) or join our [Discussions](https://github.com/CHU-Brest/Stream/discussions).
+For questions or discussions, please open an [issue](https://github.com/24p11/GenReports/issues) or join our [Discussions](https://github.com/24p11/GenReports/discussions).
 
 ---
 
