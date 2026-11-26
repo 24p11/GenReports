@@ -156,6 +156,8 @@ Les transferts de fichiers et le suivi des jobs sont retentés en cas d'erreur r
 
 Les données PMSI et les référentiels CIM-10/CCAM/GHM ne sont pas versionnés dans ce dépôt. Ils doivent être placés dans les chemins indiqués par `data.input` et `data.referentials`.
 
+Les fichiers et colonnes attendus sont définis dans le [contrat de données de GenPatientProfile](https://github.com/24p11/GenPatientProfile/blob/main/docs/input-data-contract.md).
+
 Sont également exclus de Git :
 
 - `data/` ;
