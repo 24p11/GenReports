@@ -1,106 +1,72 @@
 # GenReports
 
+Application de génération de comptes rendus d'hospitalisation synthétiques à partir de scénarios produits par [GenPatientProfile](https://github.com/24p11/GenPatientProfile) et de modèles de langage.
+
 ![Python](https://img.shields.io/badge/python-3.13+-blue)
-[![CC BY-NC-SA 4.0](https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-green.svg)](https://creativecommons.org/licenses/by-nc-sa/4.0/)
+[![License: CC BY-NC-SA 4.0](https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-green.svg)](https://creativecommons.org/licenses/by-nc-sa/4.0/)
 
-Génération de comptes rendus d'hospitalisation (CRH) synthétiques à partir de statistiques PMSI nationales et de modèles de langage (LLM).
+## Rôle du projet
 
-GenReports unifie plusieurs méthodes de génération au sein d'une architecture commune, chacune étant implémentée sous forme de pipeline :
+La chaîne est répartie entre deux projets :
 
-| Pipeline | Source de données | Méthode | Statut |
-|----------|-------------------|---------|--------|
-| **PMSI sampling** | ATIH (Base nationale) | Tirage pondéré DP/CCAM/DAS/DMS + LLM | Implémenté |
-| **profile generation** | ATIH (Base nationale) | Tirage pondéré PMSI + LLM | Implémenté |
-
-Projets de référence : [Doppelgänger](https://github.com/CHU-Brest/doppelganger) (CHU Brest) et [Recode-Scenario](https://github.com/24p11/recode-scenario) (profile generation).
-
-## Architecture
-
+```text
+GenPatientProfile                         GenReports
+données + référentiels                    clients LLM
+        ↓                                      ↓
+profils → scénarios → prompts  ───────→  comptes rendus → Parquet
 ```
-GenReports/
-├── cli.py                        # Point d'entrée CLI
-├── runner.py                     # Orchestration du pipeline
-├── core/
-│   ├── config.py                 # Chargement YAML
-│   ├── logger.py                 # Logger console
-│   └── clients.py                # Definition des clients de connexion (Ollama, Mistral, Antropic)
-├── pipelines/
-│   ├── __init__.py               # Expose les pipelines et modules communs
-│   ├── pipeline.py               # Classes de base et clients LLM
-│   ├── fictive.py               # Génération de séjours fictifs (PMSI sampling/profile generation)
-│   ├── scenario.py              # Transformation en scénarios textuels
-│   ├── report.py                # Génération de rapports CRH via LLM
-│   ├── pmsi_sampling/
-│   │   ├── __init__.py           # Expose PMSISamplingPipeline, constants, sampler
-│   │   ├── pipeline.py           # Pipeline PMSI sampling spécifique
-│   │   ├── constants.py          # Constantes et sources de données
-│   │   ├── fictive.py            # Création de CR fictif
-│   │   ├── report.py             # Création de rapport
-│   │   └── sampler.py            # Échantillonnage et génération aléatoire
-│   └── profile_generation/
-│       ├── __init__.py           # Expose les modules profile generation et ProfileGenerationPipeline
-│       ├── pipeline.py           # Pipeline profile generation spécifique
-│       ├── loader.py             # Chargement des référentiels et données PMSI
-│       ├── scenario.py           # Construction des scénarios cliniques
-│       ├── managment.py          # Classification des types de prise en charge
-│       ├── prompt.py             # Génération des prompts utilisateur et système
-│       ├── sampler.py            # Échantillonnage et génération aléatoire
-│       ├── constants.py          # Constantes et listes de codes
-│       ├── fictive.py            # Création de CR fictif
-│       ├── report.py             # Création de rapport
-│       ├── referentials/         # Référentiels profile generation (ICD-10, CCAM, GHM, etc.)
-│       └── templates/            # Modèles de prompts système
-└── config/
-    ├── prompts.yaml              # System prompts LLM
-    └── servers.example.yaml      # Template config (copier vers servers.yaml)
-```
+
+GenReports :
+
+- appelle GenPatientProfile pour construire les scénarios et les prompts ;
+- exécute les générations avec Ollama, Claude ou Mistral ;
+- prend en charge le mode direct et le mode batch Mistral ;
+- prend en charge la génération `profile_generation` en une ou deux étapes ;
+- rassemble les résultats dans des fichiers Parquet.
+
+GenReports n'est pas publié sur PyPI. Il s'utilise depuis ce dépôt.
 
 ## Installation
 
-Avec pip : 
 ```bash
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -e .
-```
-
-Avec uv:
-```bash
+git clone https://github.com/24p11/GenReports.git
+cd GenReports
 uv sync
 ```
 
+La dépendance `GenPatientProfile` est installée depuis PyPI selon la version verrouillée dans `uv.lock`.
 
 ## Configuration
 
-Copier le template et renseigner vos clés API :
+Copier le fichier d'exemple :
 
 ```bash
 cp config/servers.example.yaml config/servers.yaml
 ```
 
-Éditer `config/servers.yaml` :
+Le fichier `config/servers.yaml` contient les chemins locaux, les paramètres de génération et les accès aux modèles. Il est ignoré par Git.
+
+Exemple pour `profile_generation` :
 
 ```yaml
 pipelines:
-  pmsi_sampling:
-    data:
-      input: "data/pmsi_sampling/"       # CSV PMSI extraits via SAS
-      output: "reports/pmsi_sampling/"   # CRH générés
   profile_generation:
     data:
-      input: "data/profile_generation/"                    # Fichiers PMSI profile generation
-      output: "reports/profile_generation/"                # CRH générés
-      referentials: "data/profile_generation/referentials" # Référentiels profile generation
+      input: "data/profile_generation"
+      referentials: "data/profile_generation/referentials"
+      output: "reports/profile_generation"
 
     generation:
-      mode: "direct"           # direct ou mistral_batch
-      workflow: "one_stage"    # one_stage ou two_stage
-      prompt_set: "default"    # default ou old
-      poll_interval_seconds: 1 # Intervalle de polling en secondes
-      mistral_batch_size: 1000 # Nombre de requêtes par job Mistral
+      mode: "mistral_batch"
+      workflow: "two_stage"
+      prompt_set: "old"
+      poll_interval_seconds: 1
+      mistral_batch_size: 1000
+
       one_stage:
         model: "mistral-large-latest"
         max_tokens: 128000
+
       two_stage:
         summary:
           model: "mistral-large-latest"
@@ -113,510 +79,138 @@ servers:
   ollama:
     host: "http://localhost:11434"
     model: "mistral"
+
   claude:
-    api_key: "sk-..."
+    api_key: ""
     model: "claude-sonnet-4-6"
+    verify: true
+
   mistral:
-    api_key: "..."
+    api_key: ""
     model: "mistral-large-latest"
-```
-Pour reproduire la méthode historique profile generation avec Mistral, le pipeline profile generation peut être lancé en mode batch Mistral :
-
-```yaml
-pipelines:
-  profile_generation:
-    generation:
-      mode: "mistral_batch"
-      workflow: "one_stage"
-      prompt_set: "default"
-      mistral_batch_size: 1000
-      one_stage:
-        model: "mistral-large-latest"
-        max_tokens: 128000
-      poll_interval_seconds: 1
-```
-Ce mode est spécifique au client mistral. Le mode direct reste le mode par défaut et fonctionne avec Ollama, Claude et Mistral.
-
-Le workflow profile generation en deux étapes génère d'abord un résumé clinique, puis
-utilise ce résumé pour produire le compte rendu final :
-
-```yaml
-pipelines:
-  profile_generation:
-    generation:
-      mode: "mistral_batch"
-      workflow: "two_stage"
-      prompt_set: "old"
-      poll_interval_seconds: 1
-      mistral_batch_size: 1000
-      two_stage:
-        summary:
-          model: "mistral-large-latest"
-          max_tokens: 8000
-        report:
-          model: "mistral-large-latest"
-          max_tokens: 128000
+    verify: true
 ```
 
-Compatibilité des configurations profile generation :
+Un jeu de prompts externe peut être sélectionné avec `generation.prompt_dir`. Dans ce cas, ne pas définir simultanément un autre `prompt_set` que sa valeur par défaut.
 
-| Mode | Workflow | Client | Jeu de prompts |
-|------|----------|--------|----------------|
+## Utilisation
+
+Afficher l'aide :
+
+```bash
+uv run genreports --help
+```
+
+Générer avec Ollama :
+
+```bash
+uv run genreports profile_generation --client ollama --n-sejours 20
+```
+
+Générer avec Claude :
+
+```bash
+uv run genreports profile_generation --client claude --n-sejours 20
+```
+
+Générer avec Mistral :
+
+```bash
+uv run genreports profile_generation --client mistral --n-sejours 20
+```
+
+Pour `pmsi_sampling` :
+
+```bash
+uv run genreports pmsi_sampling --client mistral --n-sejours 500 \
+  --n-ccam 3 --n-das 4
+```
+
+La commande accepte également `--ghm5` pour filtrer les GHM et `--batch-size` pour régler la taille des écritures intermédiaires en mode direct.
+
+## Modes de génération
+
+| Mode | Workflow | Client | Jeux de prompts compatibles |
+|---|---|---|---|
 | `direct` | `one_stage` | Ollama, Claude ou Mistral | `default`, `old` ou externe |
 | `mistral_batch` | `one_stage` | Mistral | `default`, `old` ou externe |
 | `mistral_batch` | `two_stage` | Mistral | `old` ou externe compatible |
 
-Le jeu de prompts `default` prend uniquement en charge `one_stage`. Le jeu
-`old` prend en charge les deux workflows. Un jeu externe peut être sélectionné
-avec `prompt_dir` à la place de `prompt_set`. GenPatientProfile valide son manifeste et
-en sauvegarde un instantané dans le répertoire de sortie.
+Le jeu `default` prend uniquement en charge `one_stage`. Le jeu `old` prend en charge les deux workflows.
 
-En mode `mistral_batch`, les requêtes sont réparties dans des jobs successifs
-de `mistral_batch_size` requêtes. La valeur par défaut est `1000`. Les
-réponses de tous les jobs sont réunies dans un unique fichier Parquet. Pour
-`N` scénarios, `one_stage` crée `ceil(N / mistral_batch_size)` jobs.
-`two_stage` exécute tous les jobs de résumés, puis les jobs de comptes rendus
-pour les résumés obtenus sans erreur.
+### Mode direct
 
-Les uploads et téléchargements sont retentés en cas d’erreur réseau. Le suivi
-d’un job reprend également après une interruption réseau, sans recréer le job.
-La création d’un job n’est pas répétée automatiquement : si sa réponse est
-perdue, les jobs actifs doivent être vérifiés côté Mistral avant une relance.
+Chaque scénario est envoyé au client sélectionné. Les résultats sont écrits progressivement selon `--batch-size`.
 
-### Données d'entrée (pipeline PMSI sampling)
+### Batch Mistral en une étape
 
-Déposer les CSV suivants dans le répertoire `data.input` configuré :
+Les requêtes sont réparties en jobs de `generation.mistral_batch_size` requêtes, avec une valeur par défaut de 1000. Les réponses sont rassemblées dans un seul fichier Parquet.
 
-| Fichier | Contenu |
-|---------|---------|
-| `PMSI_DP.csv` | Probabilités P(DP \| GHM5) |
-| `PMSI_DAS.csv` | Probabilités P(DAS \| GHM5, AGE, SEXE, DP) |
-| `PMSI_CCAM_DP.csv` | Probabilités P(CCAM \| GHM5, DP) |
-| `PMSI_DMS.csv` | Durées de séjour (P25, P50, P75) |
-| `ALL_CIM10.csv` | Référentiel diagnostics CIM-10 |
-| `ALL_CCAM.csv` | Référentiel actes CCAM |
-| `ALL_CLASSIF_PMSI.csv` | Référentiel GHM |
+### Batch Mistral en deux étapes
 
-Ces fichiers sont produits par les scripts d'extraction ATIH spécifiques au CHU Brest.
+Tous les résumés sont générés en premier. Les comptes rendus sont ensuite générés à partir des résumés réussis. Une ligne dont le résumé échoue est conservée avec l'erreur correspondante et n'est pas envoyée à la seconde étape.
 
-### Données d'entrée (pipeline profile generation)
+Les transferts de fichiers et le suivi des jobs sont retentés en cas d'erreur réseau. La création d'un job n'est pas répétée automatiquement afin d'éviter les doublons.
 
-Déposer les fichiers suivants dans le répertoire `data.input` configuré :
+## Données et référentiels
 
-| Fichier | Contenu |
-|---------|---------|
-| `scenarios_*.parquet` | Profils PMSI avec diagnostics principaux et associés |
-| `bn_pmsi_related_diag_*.csv` | Diagnostics associés par GHM |
-| `bn_pmsi_procedures_*.csv` | Actes CCAM par GHM |
+Les données PMSI et les référentiels CIM-10/CCAM/GHM ne sont pas versionnés dans ce dépôt. Ils doivent être placés dans les chemins indiqués par `data.input` et `data.referentials`.
 
-Ces fichiers sont produits par les scripts d'extraction ATIH spécifiques à l'profile generation. Les référentiels profile generation doivent être placés dans `data.referentials`.
+Sont également exclus de Git :
 
-## Utilisation
+- `data/` ;
+- `reports/` ;
+- `config/servers.yaml` ;
+- les environnements virtuels et fichiers temporaires.
 
-```bash
-# Générer 500 CRH avec Ollama (local)
-uv run genreports pmsi_sampling --n-sejours 500
+Le dépôt contient seulement le code, les tests, les fichiers de configuration sans secret et les prompts génériques propres à GenReports.
 
-# Générer avec Claude, filtré sur les GHM chirurgicaux "06C"
-uv run genreports pmsi_sampling --client claude --n-sejours 1000 --ghm5 06C
+## Sorties
 
-# Générer avec Mistral, 3 actes CCAM max, 4 DAS max
-uv run genreports pmsi_sampling --client mistral --n-ccam 3 --n-das 4
-```
+Les scénarios préparés par GenPatientProfile sont sauvegardés avant l'appel au modèle. GenReports écrit ensuite les comptes rendus dans le répertoire `data.output` configuré.
 
-
-```bash
-# Générer 2 CRH profile generation avec le mode direct par défaut
-uv run genreports profile_generation --n-sejours 2
-
-# Générer des CRH profile generation avec Claude
-uv run genreports profile_generation --client claude --n-sejours 10
-
-# Générer des CRH profile generation avec Mistral en mode direct
-uv run genreports profile_generation --client mistral --n-sejours 10
-```
-
-### Options
-
-| Option | Défaut | Description |
-|--------|--------|-------------|
-| `pipeline` | — | `pmsi_sampling` ou `profile_generation` |
-| `--client` | `ollama` | `ollama`, `claude` ou `mistral` |
-| `--n-sejours` | 1000 | Nombre de séjours fictifs |
-| `--n-ccam` | 1 | Nombre max d'actes CCAM par séjour (PMSI sampling uniquement) |
-| `--n-das` | 5 | Nombre max de diagnostics associés (PMSI sampling uniquement) |
-| `--ghm5` | — | Filtre sur les codes GHM5 (ex. `06C`) |
-| `--batch-size` | 1000 | Lignes par écriture intermédiaire en mode direct |
-
-## Sortie
-
-
-Les sorties sont écrites en fichiers Parquet horodatés dans le répertoire `data.output`.
-
-Pour les générations classiques :
+Exemples :
 
 ```text
-reports/pmsi_sampling/medical_reports_1000_20260405_143022.parquet
-reports/profile_generation/medical_reports_10_20260512_113644.parquet
+reports/profile_generation/profile_generation_scenarios_<nombre>_<horodatage>.parquet
+reports/profile_generation/medical_reports_<lot>_<horodatage>.parquet
+reports/profile_generation/profile_generation_mistral_batch_reports_<nombre>_<horodatage>.parquet
+reports/profile_generation/profile_generation_mistral_batch_two_stage_reports_<nombre>_<horodatage>.parquet
 ```
 
-Pour le pipeline profile generation, les scénarios complets sont également sauvegardés avant l’appel au LLM :
+Les sorties contiennent notamment l'identifiant de génération, le scénario, le compte rendu, le modèle, les compteurs de tokens et les erreurs éventuelles. Le workflow en deux étapes ajoute le résumé intermédiaire et ses métadonnées.
+
+## Architecture
 
 ```text
-reports/profile_generation/profile_generation_scenarios_10_20260512_113402.parquet
+GenReports/
+├── cli.py                         # commande genreports
+├── runner.py                      # orchestration GenPatientProfile + LLM
+├── core/
+│   ├── clients.py                 # Ollama, Claude, Mistral et batch Mistral
+│   ├── config.py                  # lecture YAML
+│   └── logger.py
+├── pipelines/
+│   ├── pipeline.py                # interface commune
+│   ├── report.py                  # génération directe et persistance
+│   ├── pmsi_sampling/
+│   │   └── report.py              # formulation PMSI sampling
+│   └── profile_generation/
+│       ├── pipeline.py            # sélection direct/batch et one/two stage
+│       └── report.py              # construction et assemblage des batchs
+└── config/
+    ├── prompts.yaml
+    └── servers.example.yaml
 ```
-Ces fichiers contiennent notamment les diagnostics, DAS, actes, règle de codage, template, scenario, user_prompt, system_prompt, prefix et prefix_len.
 
-En mode Mistral batch profile generation :
-```text
-reports/profile_generation/profile_generation_mistral_batch_reports_10_20260512_115347.parquet
-reports/profile_generation/profile_generation_mistral_batch_two_stage_reports_10_20260512_120015.parquet
-```
-
-Les sorties `one_stage` contiennent notamment :
-
-| Colonne | Contenu |
-|---------|---------|
-| `generation_id` | Identifiant du scénario |
-| `scenario` | Scénario clinique |
-| `report` | Compte rendu généré |
-| `model` | Modèle utilisé |
-| `prompt_tokens`, `completion_tokens`, `total_tokens` | Consommation Mistral |
-| `mistral_batch_error` | Erreur de la requête, le cas échéant |
-
-Les sorties `two_stage` ajoutent le résumé intermédiaire, son modèle, ses
-compteurs de tokens et son éventuelle erreur. Si le résumé échoue, la
-génération finale correspondante n’est pas envoyée et la ligne reste présente
-dans le Parquet avec un compte rendu vide.
-
-Les sorties profile generation peuvent contenir des colonnes supplémentaires utiles au debug et à la comparaison avec la méthode historique profile generation.
-
-## Tests
-
-Pour exécuter les tests unitaires, utilisez la commande suivante :
+## Tests et intégration continue
 
 ```bash
 uv run pytest
 ```
 
-ou plus simplement à l'aide du Makefile
-
-```bash
-make test
-```
-
-Les tests couvrent :
-- L'initialisation des pipelines PMSI sampling et profile generation
-- La vérification des données d'entrée
-- L'intégration des pipelines avec le runner
-
-## Architecture des Pipelines
-
-Les pipelines suivent une architecture modulaire avec trois étapes principales :
-
-```
-get_fictive() → get_scenario() → get_report()
-```
-
-1. **get_fictive()** : Génère des séjours fictifs à partir des données chargées.
-2. **get_scenario()** : Transforme les séjours fictifs en scénarios textuels pour le LLM.
-3. **get_report()** : Génère les comptes rendus d'hospitalisation (CRH) à partir des scénarios.
-
-## Modules communs
-
-Trois nouveaux modules ont été ajoutés pour centraliser la logique commune entre les pipelines :
-
-### `pipelines/fictive.py`
-
-Module responsable de la génération de séjours fictifs à partir des données PMSI.
-
-**Fonction principale** :
-- `generate_fictive_stays(data, n_sejours, generate_fn, **kwargs)`
-
-**Responsabilités** :
-- Génération de séjours fictifs pour les pipelines PMSI sampling et profile generation
-- Logique d'échantillonnage spécifique à chaque pipeline
-- Réduction de la duplication de code
-
-### `pipelines/scenario.py`
-
-Module responsable de la transformation des séjours fictifs en scénarios textuels pour les LLM.
-
-**Fonction principale** :
-- `format_scenarios(df, scenario_fn, **kwargs)`
-
-**Responsabilités** :
-- Transformation des séjours en prompts textuels
-- Formatage spécifique PMSI sampling (simple) et profile generation (riche)
-- Gestion des templates et règles ATIH
-
-### `pipelines/report.py`
-
-Module responsable de la génération de rapports CRH via appels LLM.
-
-**Fonction principale** :
-- `generate_reports(df, client, model, batch_size, output_dir, generate_fn)`
-
-**Responsabilités** :
-- Interaction avec les clients LLM (Anthropic, Mistral, Ollama)
-- Gestion des batches et persistance des résultats
-- Formatage des réponses LLM
-
-## Comparaison des Pipelines
-
-```mermaid
-flowchart TD
-    subgraph Source["Source de données (ATIH)"]
-        A["Base nationale ATIH"]
-    end
-
-    subgraph PMSI_SAMPLING["Pipeline PMSI sampling"]
-        B1["Extraction CHU Brest"] --> B2["CSV: DP/DAS/DMS/CCAM"]
-        B2 --> B3["Tirage pondéré simple"]
-        B3 --> B4["Scénarios génériques"]
-        B4 --> B5["Templates LLM basiques"]
-    end
-
-    subgraph PROFILE_GENERATION["Pipeline profile generation"]
-        A2["Extraction profile generation"] --> A3["Parquet: Scénarios PMSI"]
-        A3 --> A4["Tirage + règles ATIH"]
-        A4 --> A5["Scénarios enrichis"]
-        A5 --> A6["Templates LLM spécifiques"]
-        A6 --> A7["Validation ATIH"]
-    end
-
-    A --> B1
-    A --> A2
-
-    style Source fill:#f9f,stroke:#333
-    style PMSI_SAMPLING fill:#bbf,stroke:#333
-    style PROFILE_GENERATION fill:#bfb,stroke:#333
-```
-
-### Différences clés
-
-| Aspect | Pipeline PMSI sampling (CHU Brest) | Pipeline profile generation (Paris) |
-|--------|----------------------------|-------------------------|
-| **Extraction** | Scripts CHU Brest | Scripts profile generation spécifiques |
-| **Format** | CSV (DP/DAS/DMS/CCAM) | Parquet (scénarios PMSI) |
-| **Tirage** | Pondéré simple | Pondéré + règles ATIH |
-| **Modules** | fictive.py, scenario.py | + report.py personnalisé |
-| **Classification** | Basique | MCO/SSR/HAD (managment.py) |
-| **Validation** | Standard | Règles ATIH spécifiques |
-| **Templates** | Génériques | Spécifiques profile generation |
-| **Complexité** | Simple | Sur-couche métier |
-
-## Intégration dans les pipelines
-
-Les pipelines PMSI sampling et profile generation ont été mis à jour pour utiliser ces modules communs :
-
-### PMSI sampling Pipeline
-```python
-class PMSISamplingPipeline(BasePipeline):
-    @override
-    def get_fictive(self, data, **kwargs):
-        return generate_fictive_stays(data, generate_fn=generate_pmsi_sampling_fictive, **kwargs)
-
-    @override
-    def get_scenario(self, df):
-        return format_scenarios(df, scenario_fn=format_pmsi_sampling_scenario)
-
-     @override
-    def get_report(
-        self,
-        df: pl.DataFrame,
-        client: AnthropicClient | MistralClient | OllamaClient,
-        model: str,
-        batch_size: int = 1000,
-    ) -> pl.DataFrame:
-        output_dir = Path(self.config["data"]["output"])
-        system_prompt = self.prompt["generate"]["system_prompt"]
-        return generate_reports(
-            df=df,
-            client=client,
-            model=model,
-            generate_fn=generate_pmsi_sampling_report,
-            batch_size=batch_size,
-            output_dir=output_dir,
-            system_prompt=system_prompt,
-        )
-```
-
-### profile generation Pipeline
-Le pipeline profile generation utilise les modules communs avec une sur-couche spécifique pour la génération de rapports. Cette sur-couche implémente la logique métier profile generation pour :
-
-- **Gestion des référentiels ATIH** : Chargement et validation des codes ICD-10, CCAM et GHM spécifiques à l'profile generation
-- **Classification des prises en charge** : Application des règles de managment (MCO, SSR, HAD) selon les référentiels ATIH
-- **Génération de prompts enrichis** : Intégration des templates système spécifiques profile generation avec règles de formatage ATIH
-- **Validation des scénarios** : Vérification de la cohérence clinique selon les règles métiers profile generation
-
-```python
-class ProfileGenerationPipeline(BasePipeline):
-    @override
-    def get_fictive(self, data, **kwargs):
-        return generate_fictive_stays(data, generate_fn=generate_profile_fictive, **kwargs)
-    
-    @override
-    def get_scenario(self, df):
-        return format_scenarios(df, scenario_fn=format_profile_scenario, **kwargs)
-    
-    @override
-    def get_report(
-        self,
-        df: pl.DataFrame,
-        client: Any,
-        model: str,
-        batch_size: int = 1000,
-    ) -> pl.DataFrame:
-        """Generate one CRH per scenario using the row's own system prompt.
-
-        Overrides :meth:`~pipelines.pipeline.BasePipeline.get_report` to read
-        ``df_row["system_prompt"]`` instead of a single global system prompt.
-        """
-        output_dir = Path(self.config["data"]["output"])
-        return generate_reports(
-            df,
-            client,
-            model,
-            batch_size=batch_size,
-            output_dir=output_dir,
-            generate_fn=generate_profile_report,
-            system_prompt="",  # just for signature since system from is in the df in the function generate_profile_report
-        )
-```
-
-## Ajouter un pipeline
-
-Créer une classe héritant de `BasePipeline` et implémenter les 4 méthodes :
-
-```python
-from pipelines.pipeline import BasePipeline
-
-class MonPipeline(BasePipeline):
-    name = "mon_pipeline"
-
-    def check_data(self) -> None:
-        """Verify that source data is present and prepare it if needed."""
-        # Ajoutez des messages de log pour faciliter le débogage
-        self.logger.info("Vérification des données d'entrée pour le pipeline %s.", self.name)
-        # Votre logique de vérification des données ici
-        self.logger.info("Données vérifiées avec succès.")
-
-    def load_data(self) -> dict[str, pl.LazyFrame]:
-        """Load prepared data as LazyFrames."""
-        # Ajoutez des messages de log pour suivre le chargement des données
-        self.logger.info("Chargement des données pour le pipeline %s.", self.name)
-        # Votre logique de chargement des données ici
-        self.logger.info("Données chargées avec succès.")
-        return {}
-
-    def get_fictive(self, data, **kwargs) -> pl.DataFrame:
-        """Generate fictitious hospital stays from loaded data."""
-        # Ajoutez des messages de log pour suivre la génération des séjours fictifs
-        self.logger.info("Génération de %d séjours fictifs.", kwargs.get("n_sejours", 1000))
-        # Votre logique de génération des séjours fictifs ici
-        self.logger.info("Génération des séjours fictifs terminée avec succès.")
-        return pl.DataFrame()
-
-    def get_scenario(self, df) -> pl.DataFrame:
-        """Transform fictitious stays into text scenarios for the LLM."""
-        # Ajoutez des messages de log pour suivre le formatage des scénarios
-        self.logger.info("Formatage des scénarios pour %d séjours.", len(df))
-        # Votre logique de formatage des scénarios ici
-        self.logger.info("Formatage des scénarios terminé avec succès.")
-        return df
-```
-
-Puis l'enregistrer dans `runner.py` (`PIPELINES`) et `cli.py` (`choices`).
-
-## Roadmap de fusion
-
-```mermaid
-gantt
-    title Roadmap de fusion des pipelines
-    dateFormat  YYYY-MM
-    section Étapes techniques
-    Unification interfaces       :a1, 2024-05, 2024-06
-    Refactoring ciblé            :a2, 2024-06, 2024-07
-    Validation complète          :a3, 2024-07, 2024-08
-    section Décisions architecturales
-    Référentiels                :crit1, 2024-05, 2024-05
-    Règles métiers               :crit2, 2024-05, 2024-06
-    Validation données           :crit3, 2024-06, 2024-06
-    Templates LLM                :crit4, 2024-06, 2024-07
-    section Livraison
-    Intégration continue         :2024-07, 2024-08
-    Documentation finale         :2024-08, 2024-08
-```
-
-### Détails des étapes
-
-**1. Unification des interfaces (Mai-Juin 2024)**
-- Aligner `get_report()` entre pipelines
-- Standardiser les structures de données
-- Créer des adaptateurs pour les spécificités
-
-**2. Refactoring ciblé (Juin-Juillet 2024)**
-- Extraire la logique métier profile generation
-- Documenter les divergences nécessaires
-- Optimiser les performances
-
-**3. Validation complète (Juillet-Août 2024)**
-- Tests d'intégration croisés PMSI sampling/profile generation
-- Benchmarking comparatif
-- Validation des données et cohérence
-
-### Décisions architecturales clés
-
-```mermaid
-mindmap
-  root((Décisions architecturales))
-    Référentiels
-      Séparés (PMSI sampling/profile generation)
-      Unifiés avec mappings
-      Système de plugins
-    Règles métiers
-      Modules spécifiques
-      Configurable (YAML)
-      Moteur générique
-    Validation
-      Stricte (échec rapide)
-      Progressive (warnings)
-      Scoring qualité
-    Templates LLM
-      Séparés par établissement
-      Unifié conditionnel
-      Composition modulaire
-```
-
-### Processus décisionnel
-
-1. **Ateliers collaboratifs** (Mai 2024)
-   - Alignement PMSI sampling/profile generation sur les besoins
-   - Priorisation des décisions
-
-2. **Prototypage** (Juin 2024)
-   - Preuves de concept pour options critiques
-   - Évaluation technique
-
-3. **Benchmarking** (Juillet 2024)
-   - Mesures de performance
-   - Évaluation maintenabilité
-
-4. **Documentation** (Août 2024)
-   - ADR (Architecture Decision Records)
-   - Mise à jour diagrammes
-
+La CI GitHub exécute automatiquement les tests à chaque push sur `main` et pour chaque pull request. Elle ne publie aucun paquet sur PyPI.
 
 ## Licence
- 
-Ce projet est sous licence [Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International](LICENSE.md).
- 
- 
-Vous êtes libre de :
-- **Partager** — copier et redistribuer le projet
-- **Adapter** — remixer et transformer le projet
-Sous les conditions suivantes :
-- **Attribution** — Vous devez citer le projet original
-- **Non Commercial** — Usage commercial interdit sans accord explicite
-- **Partage dans les mêmes conditions** — Toute modification doit être publiée sous la même licence
+
+Ce projet est distribué sous la licence [Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International](LICENCE.md).
